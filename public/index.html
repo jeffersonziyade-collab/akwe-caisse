@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Akwè Caisse</title>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#0b8a4b"><link rel="apple-touch-icon" href="/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f3;--cd:#fff;--tx:#10261c;--mu:#5d6f66;--ac:#0b8a4b;--hl:#f5c518;--rd:#c8321f;--bd:#dbe3de;--on:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d1612;--cd:#16221c;--tx:#e6f0ea;--mu:#93a79b;--ac:#3fcf84;--rd:#ff7a66;--bd:#25352c;--on:#06150d}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1612;--cd:#16221c;--tx:#e6f0ea;--mu:#93a79b;--ac:#3fcf84;--rd:#ff7a66;--bd:#25352c;--on:#06150d}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.45 'Bricolage Grotesque',system-ui,sans-serif;padding-bottom:84px}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0;font-weight:800}h2{font-size:17px;margin:20px 0 8px;font-weight:800}
+.mu{color:var(--mu);font-size:14px}.r{text-align:right}
+.hero{background:var(--ac);color:var(--on);border-radius:18px;padding:20px;margin:12px 0}
+.hero b{display:block;font-size:40px;font-weight:800;line-height:1.1;margin-top:4px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.k b{display:block;font-size:20px;font-weight:800}
+.f{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f .w{grid-column:1/-1}
+label{font-size:13px;color:var(--mu);display:block}
+input,select{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)}
+button,.b{font:inherit;font-weight:600;border:0;border-radius:10px;padding:11px 14px;background:var(--ac);color:var(--on);cursor:pointer;text-decoration:none;display:inline-block;text-align:center}
+button.s,.b.s{background:var(--bd);color:var(--tx)}button.x{background:none;color:var(--rd);padding:4px 8px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);align-items:center}
+.row:last-child{border:0}.row>div:first-child{min-width:0}
+.in{color:var(--ac);font-weight:600}.out{color:var(--rd);font-weight:600}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bd)}.ok{background:var(--hl);color:#10261c}
+.seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:4px 12px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--cd);border-top:1px solid var(--bd);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;color:var(--mu);border-radius:0;padding:12px 2px;font-size:13px}
+nav button.on{color:var(--ac);box-shadow:inset 0 3px var(--ac)}
+.msg{background:var(--hl);color:#10261c;border-radius:10px;padding:10px;margin:8px 0}
+.e{padding:18px;text-align:center;color:var(--mu)}
+</style></head><body><main id="app"></main>
+<nav id="nav"></nav>
+<script>
+var MODES=['Espèces','MTN MoMo','Moov Money'],OPS=['MTN MoMo','Moov Money'],
+CATS=['Achat marchandises','Loyer','Transport','Électricité/Eau','Salaires','Crédit téléphonique','Autre'],
+TABS=[['home','Accueil'],['sales','Ventes'],['cash','Caisse'],['momo','Mobile Money'],['rep','Rapports']],
+PER=[['jour',"Aujourd'hui"],['semaine','7 jours'],['mois','30 jours']];
+var S={sales:[],moves:[],momo:[]},tab='home',P='jour',MSG='';
+var TOK='';try{TOK=localStorage.getItem('akwe_t')||''}catch(e){}
+
+function $(s){return document.querySelector(s)}
+function F(n){return Math.round(n).toLocaleString('fr-FR').replace(/\u202f/g,' ')+' F'}
+function td(){var d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function sum(a,f){return a.reduce(function(t,x){return t+f(x)},0)}
+function T(s){return s.q*s.p}
+function dfmt(d){return d.split('-').reverse().join('/')}
+function calc(per){
+ var ok=function(d){var n=(new Date(td())-new Date(d))/864e5;return per=='jour'?n==0:per=='semaine'?n>=0&&n<7:n>=0&&n<30};
+ var sl=S.sales.filter(function(x){return ok(x.d)}),mv=S.moves.filter(function(x){return ok(x.d)});
+ var o=mv.filter(function(m){return m.t=='out'}),i=mv.filter(function(m){return m.t=='in'});
+ var v=sum(sl,T),cg=sum(sl,function(x){return x.q*x.c}),ei=sum(i,function(m){return m.a}),so=sum(o,function(m){return m.a}),
+ ch=sum(o.filter(function(m){return m.k!='Achat marchandises'}),function(m){return m.a});
+ return{sl:sl,mv:mv,o:o,v:v,cg:cg,ei:ei,so:so,ch:ch,ent:v+ei,ben:v-cg-ch+ei}}
+function opt(a,s){return a.map(function(x){return'<option'+(x==s?' selected':'')+'>'+x+'</option>'}).join('')}
+function seg(){return'<div class="seg">'+PER.map(function(p){return'<button class="'+(P==p[0]?'':'s')+'" onclick="P=\''+p[0]+'\';go()">'+p[1]+'</button>'}).join('')+'</div>'}
+function pl(){return PER.filter(function(p){return p[0]==P})[0][1]}
+/* actions */
+function addSale(){var a=$('#a').value.trim(),q=+$('#q').value,p=+$('#p').value;
+ if(!a||!(q>0)||!(p>=0)||$('#p').value==='')return alert('Renseignez l\'article, la quantité et le prix.');
+ S.sales.unshift({id:uid(),a:a,q:q,p:p,c:+$('#c').value||0,m:$('#m').value,d:$('#d').value||td()});save();MSG='Vente enregistrée : '+a;go()}
+function fill(){var n=$('#a').value.toLowerCase(),s=S.sales.filter(function(x){return x.a.toLowerCase()==n})[0];if(s){$('#p').value=s.p;$('#c').value=s.c||''}}
+function delSale(i){var s=S.sales.filter(function(x){return x.id==i})[0];if(!s)return;S.momo.forEach(function(m){if(m.s==i)m.s=null});S.sales=S.sales.filter(function(x){return x.id!=i});save();go()}
+function addMove(){var a=+$('#ma').value;if(!(a>0))return alert('Saisissez un montant.');var t=$('#mt').value;
+ S.moves.unshift({id:uid(),t:t,k:t=='in'?'Autre entrée':$('#mk').value,a:a,n:$('#mn').value.trim(),d:$('#md').value||td()});save();MSG='Mouvement enregistré.';go()}
+function delMove(i){S.moves=S.moves.filter(function(x){return x.id!=i});save();go()}
+function addMomo(){var a=+$('#oa').value;if(!(a>0))return alert('Saisissez le montant reçu.');
+ S.momo.unshift({id:uid(),o:$('#oo').value,a:a,r:$('#or').value.trim(),d:$('#od').value||td(),s:null});save();MSG='Paiement ajouté.';go()}
+function auto(){var n=0;S.momo.filter(function(m){return!m.s}).forEach(function(m){
+ var s=S.sales.filter(function(x){return!linked(x.id)&&x.m==m.o&&T(x)==m.a&&Math.abs(new Date(x.d)-new Date(m.d))<=864e5})[0];
+ if(s){m.s=s.id;n++}});save();MSG=n?n+' paiement(s) rapproché(s) automatiquement.':'Aucune correspondance trouvée (même opérateur, même montant, ±1 jour).';go()}
+function linked(id){return S.momo.some(function(m){return m.s==id})}
+function unl(i){S.momo.forEach(function(m){if(m.id==i)m.s=null});save();go()}
+function mk(i){var m=S.momo.filter(function(x){return x.id==i})[0],s={id:uid(),a:'Vente Mobile Money'+(m.r?' '+m.r:''),q:1,p:m.a,c:0,m:m.o,d:m.d};S.sales.unshift(s);m.s=s.id;save();MSG='Vente créée à partir du paiement.';go()}
+function delMomo(i){S.momo=S.momo.filter(function(x){return x.id!=i});save();go()}
+/* vues */
+function vHome(){var c=calc('jour'),un=S.momo.filter(function(m){return!m.s}).length;
+ return'<h1>Akwè Caisse</h1><div class="mu">'+new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+'</div>'+
+ '<div class="hero">Bénéfice du jour<b>'+F(c.ben)+'</b><span class="mu" style="color:inherit;opacity:.85">Ventes − coût des produits − charges</span></div>'+
+ '<div class="g"><div class="k">Ventes<b>'+F(c.v)+'</b></div><div class="k">Entrées<b class="in">'+F(c.ent)+'</b></div><div class="k">Sorties<b class="out">'+F(c.so)+'</b></div><div class="k">Nb de ventes<b>'+c.sl.length+'</b></div></div>'+
+ (un?'<div class="msg">'+un+' paiement(s) Mobile Money sans vente liée. <a href="#" onclick="tab=\'momo\';go();return false">Rapprocher</a></div>':'')+
+ '<h2>Dernières ventes</h2>'+listSales(S.sales.slice(0,4),0)+
+ '<div style="display:flex;gap:8px;margin-top:12px"><button onclick="tab=\'sales\';go()">Nouvelle vente</button><button class="s" onclick="tab=\'cash\';go()">Dépense</button></div><button class="s" style="width:100%;margin-top:8px" onclick="tab=\'momo\';go();var e=$(\'#sm\');if(e){e.scrollIntoView({block:\'center\'});e.focus()}">Importer des SMS Mobile Money</button>'}
+function listSales(a,del){return a.length?'<div class="cd">'+a.map(function(s){var r=linked(s.id);return'<div class="row"><div><b>'+esc(s.a)+'</b> <span class="mu">× '+s.q+'</span><div class="mu">'+dfmt(s.d)+' · '+s.m+(s.m!='Espèces'?' <span class="tag '+(r?'ok':'')+'">'+(r?'rapprochée':'à vérifier')+'</span>':'')+'</div></div><div class="r in">'+F(T(s))+(del?'<br><button class="x" onclick="delSale(\''+s.id+'\')">Supprimer</button>':'')+'</div></div>'}).join('')+'</div>':'<div class="e">Aucune vente. Ajoutez la première ci-dessus.</div>'}
+function vSales(){var names=Object.keys(S.sales.reduce(function(o,s){o[s.a]=1;return o},{}));
+ return'<h1>Ventes</h1><datalist id="dl">'+names.map(function(n){return'<option value="'+esc(n)+'">'}).join('')+'</datalist>'+
+ '<div class="f" style="margin-top:12px"><div class="w"><label>Article</label><input id="a" list="dl" onchange="fill()" placeholder="Ex. Sac de riz 25 kg"></div>'+
+ '<div><label>Quantité</label><input id="q" type="number" inputmode="decimal" value="1"></div><div><label>Prix unitaire (F)</label><input id="p" type="number" inputmode="numeric"></div>'+
+ '<div><label>Coût d\'achat unitaire (F)</label><input id="c" type="number" inputmode="numeric" placeholder="Pour le bénéfice"></div><div><label>Paiement</label><select id="m">'+opt(MODES)+'</select></div>'+
+ '<div class="w"><label>Date</label><input id="d" type="date" value="'+td()+'"></div><button class="w" onclick="addSale()">Enregistrer la vente</button></div>'+
+ (MSG?'<div class="msg">'+MSG+'</div>':'')+'<h2>Historique</h2>'+listSales(S.sales.slice(0,50),1)}
+function vCash(){var c=calc('mois');
+ return'<h1>Caisse</h1><div class="mu">Entrées et sorties d\'argent hors ventes</div>'+
+ '<div class="f" style="margin-top:12px"><div><label>Type</label><select id="mt" onchange="$(\'#mkw\').style.display=this.value==\'out\'?\'\':\'none\'"><option value="out">Sortie</option><option value="in">Entrée</option></select></div>'+
+ '<div><label>Montant (F)</label><input id="ma" type="number" inputmode="numeric"></div><div id="mkw"><label>Catégorie</label><select id="mk">'+opt(CATS)+'</select></div>'+
+ '<div><label>Date</label><input id="md" type="date" value="'+td()+'"></div><div class="w"><label>Note</label><input id="mn" placeholder="Facultatif"></div><button class="w" onclick="addMove()">Enregistrer</button></div>'+
+ (MSG?'<div class="msg">'+MSG+'</div>':'')+
+ '<div class="g" style="margin-top:12px"><div class="k">Entrées (30 j)<b class="in">'+F(c.ent)+'</b></div><div class="k">Sorties (30 j)<b class="out">'+F(c.so)+'</b></div></div>'+
+ '<h2>Mouvements</h2>'+(S.moves.length?'<div class="cd">'+S.moves.slice(0,50).map(function(m){return'<div class="row"><div><b>'+esc(m.k)+'</b><div class="mu">'+dfmt(m.d)+(m.n?' · '+esc(m.n):'')+'</div></div><div class="r '+m.t+'">'+(m.t=='in'?'+':'−')+F(m.a)+'<br><button class="x" onclick="delMove(\''+m.id+'\')">Supprimer</button></div></div>'}).join('')+'</div>':'<div class="e">Aucun mouvement enregistré.</div>')}
+function vMomo(){var mv=S.sales.filter(function(s){return s.m!='Espèces'}),tv=sum(mv,T),tm=sum(S.momo,function(m){return m.a}),
+ uns=mv.filter(function(s){return!linked(s.id)}),unm=S.momo.filter(function(m){return!m.s});
+ return'<h1>Mobile Money</h1><div class="mu">Ajoutez les paiements reçus (depuis le SMS ou l\'appli MoMo) puis rapprochez-les des ventes.</div>'+
+ '<div class="f" style="margin-top:12px"><div><label>Opérateur</label><select id="oo">'+opt(OPS)+'</select></div><div><label>Montant reçu (F)</label><input id="oa" type="number" inputmode="numeric"></div>'+
+ '<div><label>Référence / expéditeur</label><input id="or" placeholder="Ex. 0197…"></div><div><label>Date</label><input id="od" type="date" value="'+td()+'"></div><button class="w" onclick="addMomo()">Ajouter le paiement</button></div>'+
+ '<h2>Importer des SMS</h2><textarea id="sm" rows="4" style="width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)" placeholder="Collez ici les SMS de confirmation MTN MoMo / Moov Money"></textarea><button class="s" style="width:100%;margin-top:8px" onclick="impSms()">Importer les paiements</button><button style="width:100%;margin-top:10px" onclick="auto()">Rapprocher automatiquement</button>'+(MSG?'<div class="msg">'+MSG+'</div>':'')+
+ '<div class="g" style="margin-top:12px"><div class="k">Ventes Mobile Money<b>'+F(tv)+'</b></div><div class="k">Paiements reçus<b>'+F(tm)+'</b></div></div>'+
+ '<div class="k" style="margin-top:10px">Écart<b class="'+(tv==tm?'in':'out')+'">'+F(tm-tv)+'</b><span class="mu">'+(tv==tm?'Tout correspond.':tm>tv?'Des paiements reçus n\'ont pas de vente.':'Des ventes n\'ont pas de paiement reçu.')+'</span></div>'+
+ '<h2>Paiements sans vente ('+unm.length+')</h2>'+(unm.length?'<div class="cd">'+unm.map(function(m){return'<div class="row"><div><b>'+F(m.a)+'</b> <span class="mu">'+m.o+'</span><div class="mu">'+dfmt(m.d)+(m.r?' · '+esc(m.r):'')+'</div></div><div class="r"><button class="s" onclick="mk(\''+m.id+'\')">Créer la vente</button><button class="x" onclick="delMomo(\''+m.id+'\')">Supprimer</button></div></div>'}).join('')+'</div>':'<div class="e">Rien à rapprocher.</div>')+
+ '<h2>Ventes sans paiement ('+uns.length+')</h2>'+(uns.length?'<div class="cd">'+uns.slice(0,30).map(function(s){return'<div class="row"><div><b>'+esc(s.a)+'</b><div class="mu">'+dfmt(s.d)+' · '+s.m+'</div></div><div class="r out">'+F(T(s))+'</div></div>'}).join('')+'</div>':'<div class="e">Toutes les ventes Mobile Money sont confirmées.</div>')+
+ (S.momo.length-unm.length?'<h2>Rapprochés ('+(S.momo.length-unm.length)+')</h2><div class="cd">'+S.momo.filter(function(m){return m.s}).slice(0,20).map(function(m){return'<div class="row"><div>'+F(m.a)+' <span class="tag ok">'+m.o+'</span><div class="mu">'+dfmt(m.d)+'</div></div><button class="x" onclick="unl(\''+m.id+'\')">Délier</button></div>'}).join('')+'</div>':'')}
+function vRep(){var c=calc(P),by={},top={},cat={};
+ c.sl.forEach(function(s){by[s.m]=(by[s.m]||0)+T(s);top[s.a]=(top[s.a]||0)+T(s)});c.o.forEach(function(m){cat[m.k]=(cat[m.k]||0)+m.a});
+ var L=function(o,cl){var k=Object.keys(o).sort(function(a,b){return o[b]-o[a]}).slice(0,6);return k.length?'<div class="cd">'+k.map(function(x){return'<div class="row"><div>'+esc(x)+'</div><div class="'+cl+'">'+F(o[x])+'</div></div>'}).join('')+'</div>':'<div class="e">Aucune donnée sur la période.</div>'};
+ var txt='Rapport Akwè Caisse ('+pl()+')\nVentes : '+F(c.v)+'\nAutres entrées : '+F(c.ei)+'\nCoût des produits vendus : '+F(c.cg)+'\nCharges : '+F(c.ch)+'\nBénéfice : '+F(c.ben)+'\nSorties de caisse : '+F(c.so);
+ var mu=sum(c.sl,function(x){return x.c?0:1});
+ return'<h1>Rapports</h1>'+seg()+'<div class="hero">Bénéfice · '+pl()+'<b>'+F(c.ben)+'</b></div>'+
+ '<div class="cd"><div class="row"><div>Ventes</div><div class="in">'+F(c.v)+'</div></div><div class="row"><div>Autres entrées</div><div class="in">'+F(c.ei)+'</div></div><div class="row"><div>Coût des produits vendus</div><div class="out">−'+F(c.cg)+'</div></div><div class="row"><div>Charges (loyer, transport…)</div><div class="out">−'+F(c.ch)+'</div></div><div class="row"><div><b>Bénéfice</b></div><div><b>'+F(c.ben)+'</b></div></div></div>'+
+ (mu?'<div class="msg">'+mu+' vente(s) sans coût d\'achat : le bénéfice peut être surestimé.</div>':'')+
+ '<h2>Ventes par mode de paiement</h2>'+L(by,'in')+'<h2>Meilleurs articles</h2>'+L(top,'in')+'<h2>Dépenses par catégorie</h2>'+L(cat,'out')+
+ '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"><a class="b" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt)+'">Envoyer par WhatsApp</a><button class="s" onclick="dl(\'xlsx\')">Excel</button><button class="s" onclick="dl(\'pdf\')">PDF</button><button class="s" onclick="out()">Déconnexion</button></div><div class="mu" style="margin-top:18px"><a href="/conditions.html" target="_blank">Conditions</a> · <a href="/confidentialite.html" target="_blank">Confidentialité</a> · <a href="#" onclick="delAcc();return false">Supprimer mon compte</a></div>'}
+function go(){
+ $('#app').innerHTML={home:vHome,sales:vSales,cash:vCash,momo:vMomo,rep:vRep}[tab]();
+ $('#nav').innerHTML=TABS.map(function(t){return'<button class="'+(tab==t[0]?'on':'')+'" onclick="MSG=\'\';tab=\''+t[0]+'\';go();scrollTo(0,0)">'+t[1]+'</button>'}).join('');MSG=''}
+
+function api(u,o){o=o||{};o.headers={'Content-Type':'application/json','Authorization':'Bearer '+TOK};
+ return fetch(u,o).then(function(r){if(r.status==401){out();throw 0}return r.json()})}
+var tmr;function save(){clearTimeout(tmr);tmr=setTimeout(function(){api('/api/sync',{method:'POST',body:JSON.stringify(S)}).catch(function(){})},400)}
+function out(){TOK='';try{localStorage.removeItem('akwe_t')}catch(e){}login()}
+function login(msg,mode){mode=mode||'in';$('#nav').innerHTML='';
+ var h='<h1>Akwè Caisse</h1><div class="mu">Vos ventes, votre caisse et votre Mobile Money au même endroit.</div><div class="f" style="margin-top:12px">';
+ if(mode=='forgot')h+='<div class="w"><label>E-mail du compte</label><input id="le" type="email"></div><button class="w" onclick="forgot()">Envoyer le lien de réinitialisation</button><button class="s w" onclick="login()">Retour</button>';
+ else if(mode=='reset')h+='<div class="w"><label>Nouveau mot de passe (8 caractères minimum)</label><input id="lp" type="password"></div><button class="w" onclick="doReset()">Enregistrer le mot de passe</button>';
+ else h+='<div class="w"><label>Nom du commerce (à l\'inscription)</label><input id="ln"></div><div class="w"><label>E-mail</label><input id="le" type="email"></div><div class="w"><label>Mot de passe (8 caractères minimum)</label><input id="lp" type="password"></div><label class="w"><input id="lc" type="checkbox" style="width:auto"> J\'accepte les <a href="/conditions.html" target="_blank">conditions d\'utilisation</a> et la <a href="/confidentialite.html" target="_blank">politique de confidentialité</a> (obligatoire pour créer un compte)</label><button onclick="auth(\'login\')">Se connecter</button><button class="s" onclick="auth(\'register\')">Créer un compte</button><div class="w r"><a href="#" onclick="login(\'\',\'forgot\');return false">Mot de passe oublié ?</a></div>';
+ $('#app').innerHTML=h+'</div>'+(msg?'<div class="msg">'+msg+'</div>':'')}
+function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
+function auth(k){if(k=='register'&&!$('#lc').checked)return login('Cochez la case pour accepter les conditions et la politique de confidentialité.');
+ post('/api/'+k,{name:$('#ln').value,email:$('#le').value,password:$('#lp').value,consent:$('#lc').checked}).then(function(d){if(!d.token)return login(d.error||'Erreur');TOK=d.token;try{localStorage.setItem('akwe_t',TOK)}catch(e){}boot()})}
+function forgot(){post('/api/forgot',{email:$('#le').value}).then(function(d){login(d.error||'Si ce compte existe, un e-mail avec un lien de réinitialisation vient d\'être envoyé.')})}
+function doReset(){var t=new URLSearchParams(location.hash.slice(1)).get('reset');post('/api/reset',{token:t,password:$('#lp').value}).then(function(d){if(d.error)return login(d.error,'reset');history.replaceState(null,'',location.pathname);login('Mot de passe modifié. Connectez-vous.')})}
+function dl(k){fetch('/api/export.'+k+'?per='+P,{headers:{Authorization:'Bearer '+TOK}}).then(function(r){if(!r.ok)throw 0;return r.blob()}).then(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='akwe-'+P+'.'+k;document.body.appendChild(a);a.click();a.remove()}).catch(function(){alert('Export impossible.')})}
+function delAcc(){var p=prompt('Suppression définitive du compte et de toutes ses données. Saisissez votre mot de passe pour confirmer :');if(!p)return;api('/api/account',{method:'DELETE',body:JSON.stringify({password:p})}).then(function(r){if(r.error)return alert(r.error);out()})}
+function impSms(){api('/api/sms/parse',{method:'POST',body:JSON.stringify({text:$('#sm').value})}).then(function(r){var n=0;(r.items||[]).forEach(function(m){if(m.r&&S.momo.some(function(x){return x.r==m.r&&x.a==m.a}))return;S.momo.unshift({id:uid(),o:m.o,a:m.a,r:m.r,d:m.d,s:null});n++});save();if(!n){MSG='Aucun nouveau paiement reconnu dans ces SMS.';go()}else auto()}).catch(function(){})}
+function boot(){if(location.hash.indexOf('#reset=')==0)return login('','reset');if(!TOK)return login();api('/api/data').then(function(d){S=d;go()}).catch(function(){})}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
+boot();
+</script></body></html>
